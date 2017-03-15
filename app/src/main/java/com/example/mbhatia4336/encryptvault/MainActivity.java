@@ -126,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * @param dirPath
+     * @return array of filenames on device
+     */
     private String[] listFiles(String dirPath) {
         File dir = new File(dirPath);
         File[] filelist = dir.listFiles();
@@ -162,40 +166,36 @@ public class MainActivity extends AppCompatActivity {
      * @throws BadPaddingException
      * @throws IllegalBlockSizeException
      */
-    private void cryptFile(int cipherMode, byte[] key, File inputFile, File outputFile) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException, IOException, BadPaddingException, IllegalBlockSizeException {
+    private void cryptFile(int cipherMode, byte[] key, File inputFile, File outputFile)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
+            InvalidAlgorithmParameterException, IOException, BadPaddingException, IllegalBlockSizeException {
+        FileInputStream inputStream = new FileInputStream(inputFile);
+        int length = (int) inputFile.length();
+        byte[] inputBytes = new byte[(int) inputFile.length()];
+        inputStream.read(inputBytes);
+        Key k = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+
         if (cipherMode == Cipher.ENCRYPT_MODE) {
             byte[] iv = generateIV();
-            Key k = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(cipherMode, k, new IvParameterSpec(iv));
-            FileInputStream inputStream = new FileInputStream(inputFile);
-            byte[] inputBytes = new byte[(int) inputFile.length()];
-            inputStream.read(inputBytes);
-
             byte[] outputBytes = cipher.doFinal(inputBytes);
             byte[] byteFinal = new byte[outputBytes.length + iv.length];
             System.arraycopy(outputBytes, 0, byteFinal, 0, outputBytes.length);
             System.arraycopy(iv, 0, byteFinal, outputBytes.length, iv.length);
+
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             outputStream.write(byteFinal);
-
-            inputFile.delete();
-            inputStream.close();
             outputStream.close();
 
         } else {
-            FileInputStream inputStream = new FileInputStream(inputFile);
-            int length = (int) inputFile.length();
-            byte[] inputBytes = new byte[length];
-            inputStream.read(inputBytes);
             byte[] iv = new byte[32];
             int startIndex = (int) inputFile.length() - 32;
             for(int i = startIndex; i < length; i++) {
                 iv[i - startIndex] = inputBytes[i];
 
             }
-            Key k = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+
             cipher.init(cipherMode, k, new IvParameterSpec(iv));
             byte[] byteFinal = new byte[inputBytes.length - iv.length];
             System.arraycopy(inputBytes, 0, byteFinal, 0, byteFinal.length);
@@ -203,29 +203,17 @@ public class MainActivity extends AppCompatActivity {
 
             FileOutputStream outputStream = new FileOutputStream(outputFile);
             outputStream.write(outputBytes);
-            inputFile.delete();
-            inputStream.close();
             outputStream.close();
 
         }
+        inputFile.delete();
+        inputStream.close();
 
-//        Key k = new SecretKeySpec(key, "AES");
-//        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-//        cipher.init(cipherMode, k, new IvParameterSpec(N));
-//        FileInputStream inputStream = new FileInputStream(inputFile);
-//        byte[] inputBytes = new byte[(int) inputFile.length()];
-//        inputStream.read(inputBytes);
-//
-//        byte[] outputBytes = cipher.doFinal(inputBytes);
-//
-//        FileOutputStream outputStream = new FileOutputStream(outputFile);
-//        outputStream.write(outputBytes);
-//
-//        inputFile.delete();
-//        inputStream.close();
-//        outputStream.close();
     }
 
+    /**
+     * @return generated initialization vector
+     */
     private byte[] generateIV() {
         byte[] iv = new byte[32];
         new SecureRandom().nextBytes(iv);
