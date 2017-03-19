@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
             byte[] iv = new byte[32];
-            int startIndex = (int) inputFile.length() - 32;
+            int startIndex = (int) inputFile.length() - iv.length;
             for(int i = startIndex; i < length; i++) {
                 iv[i - startIndex] = inputBytes[i];
 
